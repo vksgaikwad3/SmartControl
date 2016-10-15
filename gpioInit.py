@@ -10,6 +10,7 @@ Here we are using the Raspberry Pi Standard GPIO libray with Board pin names.
 """
 import RPi.GPIO as GPIO		# GPIO control module
 import time
+from QTouch import QTouch
 
 # GPIOS used in the System
 L1	= 40
@@ -36,6 +37,10 @@ UP	= 29
 DOWN 	= 13
 FAN_CTL	= 11		#MSB
 
+output_chanels = (L1,L2,L3,L4,Level_1,Level_2,Level_3,Level_4)
+input_chanels = (SW_1,SW_2,SW_3,SW_4,UP,DOWN,FAN_CTL)
+
+QT = QTouch()
 	
 # Function to gpioInit()
 
@@ -46,55 +51,45 @@ def gpioInit():
 	#GPIO.setmode(GPIO.BCM)
 	GPIO.setwarnings(False)
 	# GPIOs used for Q-Touch inputs 
-	print "GPIOs Set"
+	print ("GPIOs Set")
 
 	#output_pins =(L1,38,36,32,26,24,22)		#list of Output GPIOS used
-	output_chanels = (L1,L2,L3,L4,Level_1,Level_2,Level_3,Level_4)
 	GPIO.setup(output_chanels,GPIO.OUT)
 	GPIO.setup(output_chanels,GPIO.LOW)	# set pins LOW
 	
 
 	# GPIOs Input Pins
 
-	input_chanels = (SW_1,SW_2,SW_3,SW_4,UP,DOWN,FAN_CTL)
 	GPIO.setup(input_chanels,GPIO.IN)	# set to Input
 	GPIO.setup(input_chanels,GPIO.LOW)	
-
-	# GPIOs Output pins
-'''	GPIO.setup(40,GPIO.OUT)	
-	GPIO.setup(38,GPIO.OUT)	
-	GPIO.setup(36,GPIO.OUT)
-	GPIO.setup(32,GPIO.OUT)
-	GPIO.setup(26,GPIO.OUT)
-	GPIO.setup(24,GPIO.OUT)
-	GPIO.setup(22,GPIO.OUT)
-'''
 	
-	
-def readoutputStatus():
+def getLoadStatus():
 	
     	#output_chanels = (40,38,36,32,26,24,22)		# list of output channels
-    	output_chanels = (L1,L2,L3,L4,Level_1,Level_2,Level_3,Level_4)		# list of output channels
+    	#output_chanels = (L1,L2,L3,L4,Level_1,Level_2,Level_3,Level_4)		# list of output channels
 	outputByte = 0
 
 	ch_size = len(output_chanels)	# size of GPIOs
-	print ch_size
+	print (ch_size)
 
 	for ch_no in range(0,ch_size):
 		GPIO.setup(output_chanels[ch_no],GPIO.IN)	#set pins as input while reading their status
-		print GPIO.input(output_chanels[ch_no])	# read pin 40 on GPIO header
+		print( GPIO.input(output_chanels[ch_no]))	# read pin 40 on GPIO header
 		outputByte |= (GPIO.input(output_chanels[ch_no]) << ch_no)
 		
-	print "OUTPUT Byte:",outputByte
+	print ("OUTPUT Byte:",outputByte)
 		
-	print "New Byte ****************************"	
-	time.sleep(1)	
-
-def readTouchInput():
+	print ("New Byte ****************************")	
+	time.sleep(1)
+	GPIO.setup(output_chanels,GPIO.OUT)		# Reset back as output 	
+	
+	return outputByte
+	
+def getTouchInput():
 
 	''' Read Status of Touch Inputs'''
 	inputByte = 0	
-	input_chanels = (SW_1,SW_2,SW_3,SW_4,UP,DOWN,FAN_CTL)
+	#input_chanels = (SW_1,SW_2,SW_3,SW_4,UP,DOWN,FAN_CTL)
 	
 	input_size = len(input_chanels)
 
@@ -103,16 +98,30 @@ def readTouchInput():
 	for size in range(0,input_size):
 		inputByte |= (GPIO.input(input_chanels[size])<< size)
 	
-	print "INPUT Byte:", inputByte	
+	print ("INPUT Byte:", inputByte)	
+	return inputByte
+
 
 
 if __name__=='__main__':
+
 	gpioInit()
 try:
 	while True:
-		readTouchInput()
-		readoutputStatus()
+
+		status = getTouchInput()
+		#getLoadStatus()
+		print( status )
+		QT.L1_ON()
+		#setLoad[status]()
+		#if(status == 1):
+			#GPIO.setup(L1,GPIO.OUT)
+		#	GPIO.output(L1, GPIO.HIGH)
+		#	print ("Set")
+		#else:
+		#	print ("Reset")
+		#	GPIO.output(L1, GPIO.LOW)	
 		
 except KeyboardInterrupt:
-	print "Error Occured"
-	print "*********************** CTRL+C PRESSED ******************************************"
+	print ("Error Occured")
+	print ("*********************** CTRL+C PRESSED ******************************************")
