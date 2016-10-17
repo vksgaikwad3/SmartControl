@@ -3,7 +3,7 @@
 '''
 
 import time
-import datetime
+from datetime import datetime
 import RPi.GPIO as GPIO
 import numpy
 
@@ -42,9 +42,11 @@ input_chanels = (SW_1,SW_2,SW_3,SW_4,UP,FAN_CTL,DOWN)
 
 
 class QTouch:
+		
+	d1flage = 0
+	prev_val = 0
+	T1on = T1off = total1 = 0
 	
-	
-
 	def __init__(self):
 		
 	        ''' Constructor will set GPIOs modes'''
@@ -102,9 +104,39 @@ class QTouch:
 	
         # Functions to control the loads		
 	def Load_1(self,value):
-		GPIO.output(L1,value)
-		print("L1_1:",value)
-		return value
+		
+		print("Preveious Value:",self.prev_val)
+		print("dflage Value :", self.d1flage)
+		try:
+			if(self.prev_val == 0 and value == 1):	#device ON 
+				GPIO.output(L1,value)
+				print("L1_1:",value)
+				print("In OFF - ON  State ")
+				self.T1on = datetime.now()
+				print("ON Time:",self.T1on)
+				self.d1flage = 1			# flage to detect from ON to OFF transition
+				self.prev_val = value
+					
+
+			elif(self.prev_val == 1 and self.d1flage == 1 and value == 0):	# ON - OFF
+				GPIO.output(L1,value)
+				print("In ON - OFF ")
+				self.d1flage = 0
+				self.T1off = datetime.now()
+				print("OFF Time:",self.T1off)
+				self.total1 = self.T1off - self.T1on
+				print("Total Time :",self.total1)
+
+			elif(self.d1flage == 0 and value == 0):	# default OFF state
+				print ("Default OFF State")
+				GPIO.output(L1,value)
+
+		finally:
+			self.prev_val = value
+			print("Finally Prev_val:",self.prev_val)
+			return value		
+							
+		
 		
 	def Load_2(self,value):
 		GPIO.output(L2,value)
