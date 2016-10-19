@@ -1,6 +1,6 @@
 from QTouch import QTouch
 from datetime import datetime
-import csv,time
+import csv,time,os
 
 
 qt = QTouch()	#created instance of QTouch
@@ -87,21 +87,36 @@ def bin2list(qt_status):
 	return bitbucket
 
 
-#energy_usage =  "%s-%s-%s" % (datetime.now().year,datetime.now().month, datetime.now().day)
-#energyAudit = 'logs/'+ energy_usage + '_Watts_consume' +.csv'
 
-#power_usage = open(energyAudit, 'a+')	# open file in a append mode and add every new entry in new row
+print(os.getcwd())
+#os.system('mkdir logs')
+#print(os.system('ls'))
+#time.sleep(4)
 
-# Cretes a Tabs in a file which represents a Titles
-#writer = csv.writer(power_usage,delimiter=',',quotechar='"',quoting=csv.QUOTE_NONNUMERIC))
-#writer.writerow(('Appliance','Switch No','Appliance Rating(Watts)','ON Time','OFF Time','Total ON Time','Units Consume[kWh]'))
+#energyAuditFile_path = '/home/pi/SmartControl/logs/'+'EnergyAudit' +'.csv'
+#power_usage = open(energyAuditFile_path, 'a+')	# open file in a append mode and add every new entry in new row
+
+#check is File Empty or not
+#isEmpty = os.stat(energyAuditFile_path).st_size==0   # checks is File Empty or Note
+
+#if(isEmpty == False): # title exist Non-Empty File
+#        print("Title Exist")
+#        pass
+#
+#elif(isEmpty == True):          # no Title exist File is Empty
+#        print("Write Title")
+#
+#        writer = csv.writer(power_usage,delimiter=',',quotechar='"',quoting=csv.QUOTE_NONNUMERIC)
+#        writer.writerow(('Appliance','Switch No','Appliance Rating(Watts)','ON Time','OFF Time','Total ON Time','Units Consume[kWh]'))
+#	pass
+
+#time.sleep(4)
 
 
 
-
-while True:
+try:
 	
-	try:
+	while True:
 		touch_status = qt.getTouchInput()  # read touch inputs Status
 
 		touch_list  = bin2list(touch_status) 
@@ -109,6 +124,6 @@ while True:
 
 		print ( devices[touch_status](load1 = touch_list[0],load2 = touch_list[1],load3 = touch_list[2],load4 = touch_list[3],
 	                      level1 = touch_list[4] and  not(touch_list[5]),level2 = touch_list[5] and not(touch_list[4]), level3 =( touch_list[4] and touch_list[5] ) ,level4 = touch_list[6] ))
-		time.sleep(2)
-	except KeyError:
-		print ("Key Error")
+		#time.sleep(2)
+except KeyError:
+	print ("Key Error")
