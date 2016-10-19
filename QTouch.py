@@ -2,7 +2,7 @@
 
 '''
 
-import time
+import time,os,csv
 from datetime import datetime
 import RPi.GPIO as GPIO
 import numpy
@@ -49,23 +49,46 @@ class QTouch:
 	
 	def __init__(self):
 		
-	        ''' Constructor will set GPIOs modes'''
-		#Set the pin modes as RpiBoard pins
-	        GPIO.setmode(GPIO.BOARD)
-        	GPIO.setwarnings(False)
-        	# GPIOs used for Q-Touch inputs 
-        	print ("GPIOs Set")
+		try:
+			''' Constructor will set GPIOs modes'''
+			#Set the pin modes as RpiBoard pins
+			GPIO.setmode(GPIO.BOARD)
+			GPIO.setwarnings(False)
+			# GPIOs used for Q-Touch inputs
+			print ("GPIOs Set")
 
-        	#output_pins =(L1,38,36,32,26,24,22)            #list of Output GPIOS used
-        	GPIO.setup(output_chanels,GPIO.OUT)
-        	GPIO.setup(output_chanels,GPIO.LOW)     # set pins LOW
+			#output_pins =(L1,38,36,32,26,24,22)            #list of Output GPIOS used
+			GPIO.setup(output_chanels,GPIO.OUT)
+			GPIO.setup(output_chanels,GPIO.LOW)     # set pins LOW
 
-        	# GPIOs Input Pins
+			# GPIOs Input Pins
 
-        	GPIO.setup(input_chanels,GPIO.IN)       # set to Input
-        	GPIO.setup(input_chanels,GPIO.LOW)
+			GPIO.setup(input_chanels,GPIO.IN)       # set to Input
+			GPIO.setup(input_chanels,GPIO.LOW)
+			
+			os.system('mkdir logs')
+			energyAuditFile_path = '/home/pi/SmartControl/logs/'+'EnergyAudit' +'.csv'
+			self.power_usage = open(energyAuditFile_path, 'a+')  # open file in a append mode and add every new entry in new row
+			print("Created from QTouch Constructer")
+			#check is File Empty or not
+			isEmpty = os.stat(energyAuditFile_path).st_size==0   # checks is File Empty or Note
 
+			if(isEmpty == False): # title exist Non-Empty File
+        			print("Title Exist")
+        			pass
 
+			elif(isEmpty == True):          # no Title exist File is Empty
+        			print("Write Title")
+
+        			writer = csv.writer(power_usage,delimiter=',',quotechar='"',quoting=csv.QUOTE_NONNUMERIC)
+        			writer.writerow(('Appliance','Switch No','Appliance Rating(Watts)','ON Time','OFF Time','Total ON Time','Units Consume[kWh]'))
+        			pass
+		except IOError:
+			print("File I/O Error Occur , Check mode of File")
+			print("MODE:",self.power_usage.mode)
+		#finally :
+		#	self.power_usage.close()	# closed the file
+		
 	def getLoadStatus(self):
 	
         	outputByte = 0
@@ -108,6 +131,9 @@ class QTouch:
 		print("Preveious Value:",self.prev_val)
 		print("dflage Value :", self.d1flage)
 		try:
+			print("File MOde:",self.power_usage.mode)
+			print("is Closed:",self.power_usage.closed)
+
 			if(self.prev_val == 0 and value == 1):	#device ON 
 				GPIO.output(L1,value)
 				print("L1_1:",value)
@@ -119,14 +145,24 @@ class QTouch:
 					
 
 			elif(self.prev_val == 1 and self.d1flage == 1 and value == 0):	# ON - OFF
-				GPIO.output(L1,value)
-				print("In ON - OFF ")
-				self.d1flage = 0
-				self.T1off = datetime.now()
-				print("OFF Time:",self.T1off)
-				self.total1 = self.T1off - self.T1on
-				print("Total Time :",self.total1)
+				
+				try:
+					GPIO.output(L1,value)
+					print("In ON - OFF ")
+					self.d1flage = 0
+					self.T1off = datetime.now()
+					print("OFF Time:",self.T1off)
+					self.total1 = self.T1off - self.T1on
+					print("Total Time :",self.total1)
+				
+					writer = csv.writer(self.power_usage,delimiter=',',quotechar='"',quoting=csv.QUOTE_NONNUMERIC)
+					writer.writerow(('Bulb','SW 3','60',self.T1on,self.T1off,self.total1,4.67))   # 4.67Rs/unit kWh ,this is a variable inputs comming from Users
+				
+				finally:
+					print("Closing File...............")
+					self.power_usage.close()	#close file
 
+					
 			elif(self.d1flage == 0 and value == 0):	# default OFF state
 				print ("Default OFF State")
 				GPIO.output(L1,value)
@@ -134,6 +170,7 @@ class QTouch:
 		finally:
 			self.prev_val = value
 			print("Finally Prev_val:",self.prev_val)
+
 			return value		
 							
 		
